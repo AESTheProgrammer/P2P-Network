@@ -33,16 +33,16 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             data = json.loads(post_data.decode())
 
             user_id = data.get('user-id')
-            ip_address = data.get('ip')
+            address = data.get('address')
 
-            if user_id and ip_address:
-                redis_client.set(user_id, ip_address)
+            if user_id and address:
+                redis_client.set(user_id, address)
                 user_id = redis_client.get(user_id)
                 print(user_id)
                 self.send_response(200)
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
-                self.wfile.write(b'User ID and IP address saved successfully')
+                self.wfile.write(b'User ID and address saved successfully')
             else:
                 self.send_response(400)
                 self.send_header('Content-type', 'text/plain')

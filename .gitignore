@@ -1,0 +1,8 @@
+\.venv
+*.swp
+*.png
+*.jpg
+*.jpeg
+*.err
+__pycache__
+*.txt
