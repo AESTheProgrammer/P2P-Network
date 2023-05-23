@@ -78,7 +78,8 @@ def register(user_id: str, ip: str, port: str) -> str:
 
 
 def main():
-    if argv[2] != "local":
+    global my_ip
+    if sys.argv[2] != "localhost":
         my_ip = getIP()
     child_proc = []
     child_proc.append(
@@ -86,7 +87,7 @@ def main():
                         f"{int(sys.argv[1])+1}", my_ip]))
     child_proc.append(
         subprocess.Popen(["python3", "doc_util.py",
-                        f"{int(sys.argv[1])+3}", my_ip)
+                        f"{int(sys.argv[1])+3}", my_ip]))
     sleep(1)
     while True:
         print("request: ")

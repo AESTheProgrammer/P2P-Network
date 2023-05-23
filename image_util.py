@@ -19,7 +19,7 @@ RECV_PORT = int(sys.argv[1]) + 1
 MY_IP = "127.0.0.1"
 
 # Set up the receiver
-chunk_size = PACKET_SIZE - CHECKSUM_SIZE - SEQ_NUM_SIZE
+CHUNK_SIZE = PACKET_SIZE - CHECKSUM_SIZE - SEQ_NUM_SIZE
 crc_func = crcmod.predefined.mkPredefinedCrcFun('crc-32')
 
 
@@ -44,28 +44,36 @@ def pack_img(image_path: str) -> []:
     image_bytes = bytes(my_string)
     image_size = len(image_bytes)
     print(image_size)
-    total_packets = (image_size + SEQ_NUM_SIZE) // chunk_size + 1
+    total_packets = (image_size + SEQ_NUM_SIZE) // CHUNK_SIZE + 1
     print(total_packets)
     packets = int.to_bytes(total_packets, SEQ_NUM_SIZE, 'big') + image_bytes 
     return (packets, image_size + 4, total_packets)
 
 
 def save_file_as_img(image_bytes:bytes, img_format, dest):
-    image_bytes = base64.b64decode(image_bytes)
-    image_stream = io.BytesIO(image_bytes)
-    image = Image.open(image_stream)
-    image.save(dest, img_format)
-    image.show()
+    try:
+        image_bytes = base64.b64decode(image_bytes)
+        image_stream = io.BytesIO(image_bytes)
+        image = Image.open(image_stream)
+        image.save(dest, img_format)
+        image.show()
+    except Exception as e:
+        print("An exception occured:", e)
 
 
 def receive_image(src_file:str, dest_path:str, peer_addr:()):
+    global CHUNK_SIZE
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     received_file = bytes()
     seq_num, packet_left, expected_seq_num = 0, 1, 0
     sock.sendto(src_file.encode(), peer_addr)
     while packet_left > 0:
-        packet, sender_addr = sock.recvfrom(PACKET_SIZE)
+        try:
+            sock.settimeout(5)
+            packet, sender_addr = sock.recvfrom(PACKET_SIZE)
+        except socket.timeout:
+            print('request failed: peer did not response and request timedout')
         if verify_checksum(packet):
             packet_seq_num = int.from_bytes(packet[
                                     len(packet) - CHECKSUM_SIZE - SEQ_NUM_SIZE: \
@@ -92,7 +100,8 @@ def receive_image(src_file:str, dest_path:str, peer_addr:()):
 
 
 def send_image():
-    global chunk_size
+    global CHUNK_SIZE, MY_IP, SEND_PORT
+    MY_IP = sys.argv[2]
     print(f'{sys.argv[0]} running')
     seq_num = 0
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -103,15 +112,16 @@ def send_image():
         if not ready[0]:
             continue
         packet, receiver_addr = send_sock.recvfrom(PACKET_SIZE)
+        print(f"sending image to {receiver_addr}")
         img_path = packet.decode().strip()
         packets, file_size, total_packets = pack_img(img_path)
         if not check_file_existence(img_path):
             send_sock.sendto("File not available!\n".encode(), receiver_addr)
             continue
         send_sock.settimeout(4)  # 1. setting a 4sec timer for timeout
-        for i in range(0, file_size, chunk_size):
+        for i in range(0, file_size, CHUNK_SIZE):
             while True:
-                send_data = packets[i: i + chunk_size]
+                send_data = packets[i: i + CHUNK_SIZE]
                 # 2. adding sequence number for an in-order receive
                 # 3. calculating checksum of the packet and adding it to packet
                 checksum = (calculate_checksum(send_data)).to_bytes(CHECKSUM_SIZE, 'big')
@@ -132,6 +142,5 @@ def send_image():
 
 
 if __name__ == '__main__':
-    MY_IP = sys.argv[2]
     send_image()
 
