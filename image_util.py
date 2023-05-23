@@ -16,6 +16,7 @@ CHECKSUM_SIZE = 4
 SEQ_NUM_SIZE = 4
 SEND_PORT = int(sys.argv[1])
 RECV_PORT = int(sys.argv[1]) + 1
+MY_IP = "127.0.0.1"
 
 # Set up the receiver
 chunk_size = PACKET_SIZE - CHECKSUM_SIZE - SEQ_NUM_SIZE
@@ -28,18 +29,6 @@ def verify_checksum(packet: bytes):
     data = packet[:packet_size - CHECKSUM_SIZE - SEQ_NUM_SIZE]
     calculated_checksum = calculate_checksum(data)
     return received_checksum == calculated_checksum
-
-
-#def calculate_checksum(data):
-#    return zlib.crc32(data)
-
-#def check_file_existence(directory=".", filename: str):
-#    file_path = os.path.join(directory, filename)
-#    return os.path.exists(file_path)
-
-# def extract_file_extension(file_name):
-#     _, file_extension = os.path.splitext(file_name)
-#     return file_extension[1:]
 
 
 calculate_checksum = lambda data: zlib.crc32(data)
@@ -71,7 +60,6 @@ def save_file_as_img(image_bytes:bytes, img_format, dest):
 
 def receive_image(src_file:str, dest_path:str, peer_addr:()):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # sock.bind(("0.0.0.0", RECV_PORT))
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     received_file = bytes()
     seq_num, packet_left, expected_seq_num = 0, 1, 0
@@ -109,10 +97,9 @@ def send_image():
     seq_num = 0
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     send_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    send_sock.bind(("0.0.0.0", SEND_PORT))
+    send_sock.bind((MY_IP, SEND_PORT))
     while True:
-        # send_sock.settimeout(0)
-        ready = select.select([send_sock], [], [], 0)
+        ready = select.select([send_sock], [], [])
         if not ready[0]:
             continue
         packet, receiver_addr = send_sock.recvfrom(PACKET_SIZE)
@@ -121,7 +108,7 @@ def send_image():
         if not check_file_existence(img_path):
             send_sock.sendto("File not available!\n".encode(), receiver_addr)
             continue
-        send_sock.settimeout(4)  # 1. setting a 2sec timer for timeout
+        send_sock.settimeout(4)  # 1. setting a 4sec timer for timeout
         for i in range(0, file_size, chunk_size):
             while True:
                 send_data = packets[i: i + chunk_size]
@@ -145,4 +132,6 @@ def send_image():
 
 
 if __name__ == '__main__':
+    MY_IP = sys.argv[2]
     send_image()
+

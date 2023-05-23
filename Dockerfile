@@ -5,4 +5,6 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
-CMD ["python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+RUN chmod +x ./entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["echo", "Default argument from CMD instruction"]

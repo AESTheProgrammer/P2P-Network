@@ -3,14 +3,10 @@ import threading
 import os
 import sys
 
-STUN_SERVER = ('localhost', 8000)
 MAX_FILE_NAME_LEN = 128
 SEND_PORT = int(sys.argv[1])
+MY_IP = sys.argv[2]
 
-
-#def check_file_existence(directory, filename):
-#    file_path = os.path.join(directory, filename)
-#    return os.path.exists(file_path)
 
 check_file_existence = lambda file_name: \
                     os.path.exists(os.path.join('.', file_name))
@@ -38,8 +34,8 @@ def send_doc():
     print(f'{sys.argv[0]} running')
     FILE_PATH = 'file.txt'
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(SEND_PORT)
-    server_socket.bind(("127.0.0.1", SEND_PORT))
+    print(f'{MY_IP}:{SEND_PORT}')
+    server_socket.bind((MY_IP, SEND_PORT))
     server_socket.listen(3)
     while True:
         print('Waiting for TCP connection...')
@@ -62,18 +58,6 @@ def send_doc():
             client_socket.sendall(file_data)
         client_socket.close()
     server_socket.close()
-
-
-def req_to_STUN(req: str):
-    global username
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((SERVER_HOST, SERVER_PORT))
-    print('Connected to STUN server.')
-    client_socket.sendall(req.encode())
-    response = client_socket.recv(1024).decode()
-    print('Registered with the STUN server.')
-    client_socket.close()
-    return response
 
 
 if __name__ == "__main__":

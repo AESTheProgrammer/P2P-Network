@@ -1,19 +1,20 @@
 import requests
-from requests.exceptions import HTTPError
 import json
-from doc_util import send_doc, receive_doc
-from image_util import send_image, receive_image
 import sys
 import subprocess
 
+from time import sleep
+from requests.exceptions import HTTPError
+from image_util import send_image, receive_image
+from doc_util import send_doc, receive_doc
 
 # Set the server address and port
 SERVER_ADDRESS = 'http://localhost'
 SERVER_PORT = 8000
-my_user_id = peer_ip = my_ip = ""
+peer_ip = ""
+my_ip = '127.0.0.1'
 my_port = int(sys.argv[1])
 peer_port = -1
-
 
 
 def get_user_ip(user_id: str) -> str:
@@ -50,7 +51,7 @@ def getIP():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     s.connect(('<broadcast>', 0))
-    ip = s.getsocketname()[0]
+    ip = s.getsockname()[0]
     s.close()
     return ip
 
@@ -77,16 +78,24 @@ def register(user_id: str, ip: str, port: str) -> str:
 
 
 def main():
-    subprocess.Popen(["python3", "image_util.py", f"{int(sys.argv[1]) + 1}"])
-    subprocess.Popen(["python3", "doc_util.py", f"{int(sys.argv[1]) + 3}"])
+    if argv[2] != "local":
+        my_ip = getIP()
+    child_proc = []
+    child_proc.append(
+        subprocess.Popen(["python3", "image_util.py",
+                        f"{int(sys.argv[1])+1}", my_ip]))
+    child_proc.append(
+        subprocess.Popen(["python3", "doc_util.py",
+                        f"{int(sys.argv[1])+3}", my_ip)
+    sleep(1)
     while True:
         print("request: ")
         req = input()
         if req == "register":
             print('user id: ')
             my_user_id = input()
-            print('ip: ')
-            my_ip = input()
+            #print('ip: ')
+            #my_ip = input()
             print()
             register(my_user_id, my_ip, str(my_port))
         elif req == "resolve":
@@ -111,6 +120,8 @@ def main():
             break
         else:
             print("Invalid Request.")
+    for proc in child_proc:
+        proc.kill()
 
 if __name__ == '__main__':
     main()
