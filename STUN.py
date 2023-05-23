@@ -2,6 +2,7 @@ import redis
 import socketserver
 import json
 import sys
+import socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Redis configuration
@@ -13,7 +14,20 @@ REDIS_DB = 0
 HOST = 'localhost'
 PORT = 8000
 
+def getIP():
+    """ return the ip address of the host """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    s.connect(('<broadcast>', 0))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
+
+
 # Redis client initialization
+if sys.argv[1] != 'localhost':
+    HOST = getIP()
+    REDIS_HOST = sys.argv[2]
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 # Ping the Redis server
 try:
@@ -24,15 +38,6 @@ try:
         print("Failed to connect to Redis")
 except redis.exceptions.ConnectionError as e:
     print("Connection error:", e)
-
-def getIP():
-    """ return the ip address of the host """
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.connect(('<broadcast>', 0))
-    ip = s.getsockname()[0]
-    s.close()
-    return ip
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -100,10 +105,6 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
 def main():
     # Create an HTTP server with the custom request handler
-    global HOST, REDIS_HOST
-    if sys.argv[1] != 'localhost':
-        HOST = getIP()
-    REDIS_HOST = sys.argv[2]
     httpd = HTTPServer((HOST, PORT), MyHTTPRequestHandler)
     # Start the server
     print(f'Server running on {HOST}:{PORT}')

@@ -2,6 +2,7 @@ import requests
 import json
 import sys
 import subprocess
+import socket
 
 from time import sleep
 from requests.exceptions import HTTPError
@@ -78,9 +79,10 @@ def register(user_id: str, ip: str, port: str) -> str:
 
 
 def main():
-    global my_ip
+    global my_ip, SERVER_ADDRESS, peer_ip, peer_port
     if sys.argv[2] != "localhost":
         my_ip = getIP()
+        SERVER_ADDRESS = 'http://' + sys.argv[3]
     child_proc = []
     child_proc.append(
         subprocess.Popen(["python3", "image_util.py",
