@@ -1,0 +1,13 @@
+async-timeout==4.0.2
+certifi==2023.5.7
+charset-normalizer==3.1.0
+crcmod==1.7
+idna==3.4
+Pillow==9.5.0
+pkg_resources==0.0.0
+PyQt5==5.15.9
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.12.1
+redis==4.5.5
+requests==2.31.0
+urllib3==2.0.2

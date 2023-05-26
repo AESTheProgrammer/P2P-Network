@@ -6,3 +6,7 @@
 *.err
 __pycache__
 *.txt
+log/
+pyqt5
+env/
+!requirements.txt
